@@ -26,22 +26,25 @@
 #define LED_PIN  2
 
 
+/* BIBLIOTECAS */
+#include <Ultrasonic.h>
+
+
 /* CONSTANTES */
 const int TRIG_PIN = D0;
 const int ECHO_PIN = D1;
 
 
 /* VARIÁVEIS */
-long duration;
 int distance;
+
+
+/* INSTANCIAMENTOS */
+Ultrasonic ultrasonic(TRIG_PIN,ECHO_PIN);
 
 
 /* SETUP */
 void setup() {
-  
-  // Pinos do sensor ultrassom
-  pinMode(TRIG_PIN, OUTPUT); 
-  pinMode(ECHO_PIN, INPUT); 
 
   // Inicia comunicação serial com taxa 9600 bps
   Serial.begin(9600); 
@@ -52,20 +55,8 @@ void setup() {
 /* LOOP PRINCIPAL */
 void loop() {
 
-  // Reseta o trigger
-  digitalWrite(TRIG_PIN, LOW);
-  delayMicroseconds(2);
-  
-  // Força um pulso HIGH de 10us no trigger
-  digitalWrite(TRIG_PIN, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(TRIG_PIN, LOW);
-  
-  // Le a duração do pulso de resposta
-  duration = pulseIn(ECHO_PIN, HIGH);
-  
-  // Calcula a distância do objeto
-  distance = duration*0.034/2;
+  // Le sensor ultrassonico
+  distance = ultrasonic.read();
   
   // Escreve o resultado no monitor serial
   Serial.print("Distância: ");
