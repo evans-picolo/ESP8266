@@ -6,6 +6,8 @@
         
         Evans Picolo
         out/2020
+
+        *OBS: Calibre o sensor alterando o valor da constante global THRESHOLD.
         
 */
 
@@ -32,13 +34,23 @@
 
 
 // --- Protótipo das Funções Auxiliares ---
-unsigned long ReadCount();  //conversão AD do HX711 (primeiro módulo)
-unsigned long ReadCount2(); //conversão AD do HX711 (segundo módulo)
+unsigned long ReadCount();       //conversão AD do HX711 (primeiro módulo)
+unsigned long ReadCount2();      //conversão AD do HX711 (segundo módulo)
+void GetReference();             //calibragem automatica
+
+
+// --- Constantes ---
+const unsigned long THRESHOLD = 1000;   // AJUSTE DE SENSIBILIDADE DO SENSOR
+const unsigned long LOOP_DELAY = 100;    // ms
 
 
 // --- Variáveis Globais ---
-unsigned long convert;    // valor lido no primeiro módulo
-unsigned long convert2;   // valor lido no segundo módulo
+unsigned long convert;       // valor lido no primeiro módulo
+unsigned long convert2;      // valor lido no segundo módulo
+unsigned long reference;     // valor padrão de leitura do sensor
+unsigned long reference2;
+boolean balance;             // flag indicando se o peso está distribuido no assento
+
 
 
 // --- Configurações Iniciais ---
@@ -51,31 +63,54 @@ void setup()
    
    Serial.begin(115200);    // o ESP8266 parece não trabalhar bem em 9600 bps
 
+   Serial.print("\n\nCalibrando sensor...\n");
+   GetReference();
+   Serial.print("Referencia: ");
+   Serial.print(reference);
+   Serial.print("/");
+   Serial.print(reference2);
+   Serial.print("\n\n");
+
 } //end setup
 
 
 // --- Loop Infinito ---
 void loop()
 {
-  
   convert = ReadCount();
   convert2 = ReadCount2();
+
+  if(abs(convert - reference) > THRESHOLD || abs(convert2 - reference2) > THRESHOLD)
+  {
+    balance = false;
+  }
+  else
+  {
+    balance = true;
+  }
   
   Serial.print("Sensor 1: ");
   Serial.print(convert);
   Serial.print("\t");
   Serial.print("Sensor 2: ");
   Serial.print(convert2);
+  Serial.print("\t");
+  Serial.print("Status: ");
+  if(balance)
+    Serial.print("Peso distribuido");
+  else
+    Serial.print("Peso mal distribuido");
   Serial.print("\n");
+
   
-  delay(100);
+  delay(LOOP_DELAY);
 
 
 
 } //end loop
 
 
-// --- Funções primeiro sensor --
+// --- Funções ---
 unsigned long ReadCount()
 {
   unsigned long Count = 0;
@@ -103,8 +138,6 @@ unsigned long ReadCount()
 
 } //end ReadCount
 
-
-// --- Função segundo sensor --
 unsigned long ReadCount2()
 {
   unsigned long Count = 0;
@@ -132,6 +165,17 @@ unsigned long ReadCount2()
 
 } //end ReadCount2
 
+
+void GetReference()
+{
+  for(int i=0; i<10; i++)
+  {
+    reference += ReadCount();
+    reference2 += ReadCount2();
+  }
+  reference = reference/10;
+  reference2 = reference2/10;
+}
 
 
 
